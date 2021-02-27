@@ -1,7 +1,7 @@
 import cv2
 import numpy as np
 
-cap = cv2.VideoCapture('Videos/driving2.mp4')
+cap = cv2.VideoCapture('Videos/driving.mp4')
 
 H = 1920 // 2
 W = 1080 // 2
@@ -28,11 +28,21 @@ def stc(img):
     cv2.imshow('frame', img)
 
 
+# ORB (Oriented FAST and Rotated BRIEF)
+def orb_method(img):
+    orb = cv2.ORB_create()
+    kp = orb.detect(img, None)
+    kp, des = orb.compute(img, kp)
+    img = cv2.drawKeypoints(img, kp, None, color=(0, 255, 0), flags=0)
+    cv2.imshow('frame', img)
+
+
 while cap.isOpened():
     ret, frame = cap.read()
     # HC for Harris
     # STC for Shi-Tomasi
-    feature_detection = "HC"
+    # ORB for ORB
+    feature_detection = "ORB"
     '''
     - cv2.waitKey(x) waits for x milliseconds and returns an integer value based on the key input. However, we only want 
     the last byte (8 bits) of it to prevent potential bug(activation of NumLock for instance).
@@ -51,6 +61,8 @@ while cap.isOpened():
         hc(frame_resized)
     elif feature_detection == "STC":
         stc(frame_resized)
+    elif feature_detection == "ORB":
+        orb_method(frame_resized)
 
 cap.release()
 cv2.destroyAllWindows()
