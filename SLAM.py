@@ -4,8 +4,11 @@ from extractor import Extractor
 
 W = 1920 // 2
 H = 1080 // 2
+# By guessing, f = 180 for driving2.mp4
+F = 180
+K = np.array([[F, 0, W//2], [0, F, H//2], [0, 0, 1]])
 
-extractor = Extractor()
+extractor = Extractor(K)
 
 
 def processing_frame(image):
@@ -14,16 +17,17 @@ def processing_frame(image):
 
     # Get Feature Matches from Extractor
     matches = extractor.extract(frame_resized)
-    if matches:
-        for m in matches:
-            # extract coordinate information(current frame) from KeyPoint using .pt
-            u1, v1 = map(lambda x: int(round(x)), m[0].pt)
-            # extract coordinate information(last frame) from KeyPoint using .pt
-            u2, v2 = map(lambda x: int(round(x)), m[1].pt)
+    #print(f"{len(matches)} matches")
 
-            cv2.circle(frame_resized, (u1, v1), color=(0, 255, 0), radius=3)
-            cv2.circle(frame_resized, (u2, v2), color=(0, 0, 255), radius=3)
-            frame_resized = cv2.line(frame_resized, (u1, v1), (u2, v2), color=(255, 0, 0))
+    for pt1, pt2 in matches:
+        # extract coordinate information(current frame)
+        u1, v1 = extractor.denormalize(pt1)
+        # extract coordinate information(last frame)
+        u2, v2 = extractor.denormalize(pt2)
+
+        cv2.circle(frame_resized, (u2, v2), color=(0, 0, 255), radius=3)
+        cv2.circle(frame_resized, (u1, v1), color=(0, 255, 0), radius=3)
+        frame_resized = cv2.line(frame_resized, (u1, v1), (u2, v2), color=(255, 0, 0))
 
     cv2.imshow("frame", frame_resized)
 

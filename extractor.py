@@ -1,11 +1,30 @@
 import cv2
+import numpy as np
+from skimage.measure import ransac
+from skimage.transform import EssentialMatrixTransform
+
+
+# turn x=[u,v] to x=[u,v,1]
+def add_ones(x):
+    return np.concatenate([x, np.ones((x.shape[0], 1))], axis=1)
 
 
 class Extractor(object):
-    def __init__(self):
+    def __init__(self, k):
         self.orb = cv2.ORB_create(1000)
         self.bf = cv2.BFMatcher(cv2.NORM_HAMMING)
         self.last = None
+        self.k = k
+        self.kinv = np.linalg.inv(self.k)
+
+    def normalize(self, pts):
+        return np.dot(self.kinv, add_ones(pts).T).T[:, 0:2]
+
+    def denormalize(self, pt):
+        ret = np.dot(self.k, [pt[0], pt[1], 1.0])
+        ret /= ret[2]
+        # print(ret)
+        return int(round(ret[0])), int(round(ret[1]))
 
     def extract(self, image):
         # detection
@@ -23,10 +42,27 @@ class Extractor(object):
             matches = self.bf.knnMatch(des, self.last['des'], k=2)
             for m, n in matches:
                 if m.distance < 0.75 * n.distance:
-                    ret.append((kps[m.queryIdx], self.last['kps'][m.trainIdx]))
-        self.last = {"kps": kps, "des": des}
+                    kp1 = kps[m.queryIdx].pt
+                    kp2 = self.last['kps'][m.trainIdx].pt
+                    ret.append((kp1, kp2))
+
+        # filtering
+        if len(ret) > 0:
+            ret = np.array(ret)
+
+            # normalize
+            ret[:, 0, :] = self.normalize(ret[:, 0, :])
+            ret[:, 1, :] = self.normalize(ret[:, 1, :])
+
+            model, inliers = ransac((ret[:, 0], ret[:, 1]), EssentialMatrixTransform, min_samples=8,
+                                    residual_threshold=0.005, max_trials=100)
+
+            s, v, d = np.linalg.svd(model.params)
+            print(v)
+            ret = ret[inliers]
 
         # return
+        self.last = {"kps": kps, "des": des}
         return ret
 
 

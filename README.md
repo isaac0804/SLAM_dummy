@@ -23,7 +23,29 @@ The green circles indicate the features in the current frame, while red circles 
 - [x]  Try implement feature detection (Shi-Tomasi)
 - [x]  Try implement feature detection (ORB)
 - [x]  Feature matching
+- [x]  Fundamental Matrix
+- [x]  Essential Matrix
 
 ## To Do
+- [ ]  Get Rotation and Translation information
 - [ ]  Pangolin Library
 - [ ]  3d mapping
+
+## My thoughts in my head right now
+
+### Some concepts (possibly wrong)
+- **Extrinsic Matrix** transform 3d points in world's coordinate system into 3d points in camera's coordinate system.
+- **Intrinsic Matrix** transform 3d points in camera's coordinate system into 2d pixel coordinates.
+- **Fundamental Matrix** (From Wikipedia) is a relationship between any two images of the same scene that constrains 
+  where the projection of points from the scene can occur in both images. 
+  - Given the projection of a scene point into one of the images the corresponding point in the other image is 
+    constrained to a line, helping the search, and **allowing for the detection of wrong correspondences.** (This what 
+    we did, filter out wrong matches, and somehow get the focal length, then replace FM with Essential Matrix, brilliant 
+    move beyond my understanding!)
+
+### The flow (might be wrong)
+1. Feature extraction (Shi-Tomasi and ORB for extract and BFMatcher to match)
+2. Get Fundamental Matrix
+3. Get focal length => get Intrinsic Matrix
+4. Get Essential Matrix
+5. Extract rotation and translation information from Essential Matrix
