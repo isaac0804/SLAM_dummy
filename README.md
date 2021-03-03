@@ -25,14 +25,13 @@ The green circles indicate the features in the current frame, while red circles 
 - [x]  Feature matching
 - [x]  Fundamental Matrix
 - [x]  Essential Matrix
+- [x]  Get Rotation and Translation information
 
 ## To Do
-- [ ]  Get Rotation and Translation information
 - [ ]  Pangolin Library
 - [ ]  3d mapping
 
 ## My thoughts in my head right now
-
 ### Some concepts (possibly wrong)
 - **Extrinsic Matrix** transform 3d points in world's coordinate system into 3d points in camera's coordinate system.
 - **Intrinsic Matrix** transform 3d points in camera's coordinate system into 2d pixel coordinates.

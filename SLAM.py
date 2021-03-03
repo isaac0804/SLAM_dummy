@@ -4,8 +4,8 @@ from extractor import Extractor
 
 W = 1920 // 2
 H = 1080 // 2
-# By guessing, f = 180 for driving2.mp4
-F = 180
+# By guessing, f = 230 for driving2.mp4
+F = 230
 K = np.array([[F, 0, W//2], [0, F, H//2], [0, 0, 1]])
 
 extractor = Extractor(K)
@@ -16,8 +16,8 @@ def processing_frame(image):
     frame_resized = cv2.resize(image, (W, H))
 
     # Get Feature Matches from Extractor
-    matches = extractor.extract(frame_resized)
-    #print(f"{len(matches)} matches")
+    matches, pose = extractor.extract(frame_resized)
+    print(f"{len(matches)} matches")
 
     for pt1, pt2 in matches:
         # extract coordinate information(current frame)

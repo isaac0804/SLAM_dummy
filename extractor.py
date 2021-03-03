@@ -1,7 +1,9 @@
 import cv2
 import numpy as np
+
+np.set_printoptions(suppress=True)
 from skimage.measure import ransac
-from skimage.transform import EssentialMatrixTransform
+from skimage.transform import EssentialMatrixTransform, FundamentalMatrixTransform
 
 
 # turn x=[u,v] to x=[u,v,1]
@@ -29,7 +31,7 @@ class Extractor(object):
     def extract(self, image):
         # detection
         gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
-        corners = cv2.goodFeaturesToTrack(image=gray, maxCorners=1000, qualityLevel=0.01, minDistance=3)
+        corners = cv2.goodFeaturesToTrack(image=gray, maxCorners=2000, qualityLevel=0.01, minDistance=3)
 
         # extraction
         kps = [cv2.KeyPoint(x=corner[0][0], y=corner[0][1], _size=20) for corner in corners]
@@ -57,13 +59,22 @@ class Extractor(object):
             model, inliers = ransac((ret[:, 0], ret[:, 1]), EssentialMatrixTransform, min_samples=8,
                                     residual_threshold=0.005, max_trials=100)
 
-            s, v, d = np.linalg.svd(model.params)
-            print(v)
+            # s, v, d = np.linalg.svd(model.params)
+            # print(v)
+            R1, R2, t = cv2.decomposeEssentialMat(model.params)
+            if np.sum(R1.diagonal()) > 0:
+                R = R1
+            else:
+                R = R2
+            print(f"Rotation: \n{R}")
+            print(f"Translation: {t.T}")
+            pose = np.concatenate([R, t], axis=1)
+            print(f"Pose: \n{pose}")
             ret = ret[inliers]
 
         # return
         self.last = {"kps": kps, "des": des}
-        return ret
+        return ret, pose
 
 
 '''
