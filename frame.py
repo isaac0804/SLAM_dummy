@@ -28,7 +28,7 @@ def denormalize(pt, k):
 
 def extractRt(E):
     # extract transformation matrix from given matrix
-    W = np.mat([[0, -1, 0], [1, 0, 0], [0, 0, 1]], dtype=float)
+    W = np.mat([[0, -1, 0], [1, 0, 0], [0, 0, 1]], dtype=np.float64)
     U, d, Vt = np.linalg.svd(E)
     assert np.linalg.det(U) > 0
     if np.linalg.det(Vt) < 0:
