@@ -1,5 +1,10 @@
 # SLAM from Dummy
 This is a dummy trying to do something related to SLAM (Simultaneous Localization and Mapping).
+
+## Status
+Abandoned Project. I used so much time (more than 3 days) trying to have g2opy and pangolin library working on my Windows 10 and it is so 
+frustrating. I think I should focus on learning the other things and come back once I feel like it. (I still think SLAM 
+is cool though) 
 ## Library 
 - cv2 for feature detection
 ## Demo Images
@@ -28,6 +33,7 @@ The green circles indicate the features in the current frame, while red circles 
 - [x]  Get Rotation and Translation information
 
 ## To Do
+- [ ]  g2opy Library
 - [ ]  Pangolin Library
 - [ ]  3d mapping
 
