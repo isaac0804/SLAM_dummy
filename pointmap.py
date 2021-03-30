@@ -6,10 +6,11 @@ from multiprocessing import Process, Queue
 import g2o
 
 class Point(object):
-    def __init__(self, mapp, loc):
+    def __init__(self, mapp, loc, color):
         self.pt = loc
         self.frames = []
         self.idxs = []
+        self.color = np.copy(color)
         self.id = len(mapp.points)
         mapp.points.append(self)
 
@@ -122,20 +123,22 @@ class Map(object):
         gl.glClearColor(0.0, 0.0, 0.0, 1.0)
         self.dcam.Activate(self.scam)
 
-        gl.glPointSize(5)
+        # draw pose
         gl.glColor3f(0.0, 0.0, 1.0)
         pangolin.DrawCameras(self.state[0])
 
-        gl.glPointSize(1)
+        # draw keypoints
+        gl.glPointSize(5)
         gl.glColor3f(0.0, 1.0, 0.0)
-        pangolin.DrawPoints(self.state[1])
+        pangolin.DrawPoints(self.state[1], self.state[2])
 
         pangolin.FinishFrame()
 
     def display(self):
-        poses, pts = [], []
+        poses, pts, colors = [], [], []
         for f in self.frames:
             poses.append(f.pose)
         for p in self.points:
             pts.append(p.pt)
-        self.q.put((np.array(poses), np.array(pts)))
+            colors.append(p.color)
+        self.q.put((np.array(poses), np.array(pts), np.array(colors)/256.0))

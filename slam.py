@@ -8,10 +8,8 @@ from pointmap import Point, Map
 import PIL.Image
 import PIL.ImageOps
 
-
-
 # By guessing, focal length, f
-# 230 for driving.mp4
+# 500 for driving.mp4
 # 230 for driving2.mp4
 # 1000 for driving_timelapse.mp4
 F = int(os.getenv("F", "230"))
@@ -21,7 +19,6 @@ F = int(os.getenv("F", "230"))
 # 230 for driving2.mp4
 # 1000 for driving_timelapse.mp4
 F = 230
-
 
 # Main classes
 mapp = Map()
@@ -115,17 +112,16 @@ def processing_frame(image):
     pts4d /= pts4d[:, 3:]
     # length of pts4d is the same as the index of idx1 (because pts4d is just converted 3d coordinates)\
 
-
     unmatched_points = np.array([f1.pts[i] is None for i in idx1])
     good_pts4d = (np.abs(pts4d[:, 3]) > 0.005) & (pts4d[:, 2] > 0) & unmatched_points
     print(f"Adding {sum(good_pts4d)} points")
-
 
     print(len(good_pts4d), sum(good_pts4d))
     for i, p in enumerate(pts4d):
         if not good_pts4d[i]:
             continue
-        pt = Point(mapp, p)
+        u, v = int(round(f1.kpus[idx1[i], 0])), int(round(f1.kpus[idx1[i], 1]))
+        pt = Point(mapp, p, frame_resized[v, u])
         pt.add_observation(f1, idx1[i])
         pt.add_observation(f2, idx2[i])
 
@@ -143,6 +139,7 @@ def processing_frame(image):
     if frame.id > 4:
         mapp.optimize()
     mapp.display()
+
 
 if __name__ == "__main__":
     if len(sys.argv) < 2:
