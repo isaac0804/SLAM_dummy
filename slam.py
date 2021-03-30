@@ -3,10 +3,11 @@ import sys
 import os
 import cv2
 import numpy as np
-from frame import Frame, denormalize, match_frames, IRt
-from dotmap import Point, Map
+from frame import Frame, denormalize, match_frames
+from pointmap import Point, Map
 import PIL.Image
 import PIL.ImageOps
+
 
 
 # By guessing, focal length, f
@@ -14,6 +15,13 @@ import PIL.ImageOps
 # 230 for driving2.mp4
 # 1000 for driving_timelapse.mp4
 F = int(os.getenv("F", "230"))
+
+# By guessing, focal length, f
+# ? for driving.mp4
+# 230 for driving2.mp4
+# 1000 for driving_timelapse.mp4
+F = 230
+
 
 # Main classes
 mapp = Map()
@@ -107,10 +115,13 @@ def processing_frame(image):
     pts4d /= pts4d[:, 3:]
     # length of pts4d is the same as the index of idx1 (because pts4d is just converted 3d coordinates)\
 
+
     unmatched_points = np.array([f1.pts[i] is None for i in idx1])
     good_pts4d = (np.abs(pts4d[:, 3]) > 0.005) & (pts4d[:, 2] > 0) & unmatched_points
     print(f"Adding {sum(good_pts4d)} points")
 
+
+    print(len(good_pts4d), sum(good_pts4d))
     for i, p in enumerate(pts4d):
         if not good_pts4d[i]:
             continue
@@ -129,17 +140,15 @@ def processing_frame(image):
         frame_resized = cv2.line(frame_resized, (u1, v1), (u2, v2), color=(255, 0, 0))
 
     cv2.imshow("frame", frame_resized)
-
-    if frame.id >= 4:
+    if frame.id > 4:
         mapp.optimize()
     mapp.display()
-
 
 if __name__ == "__main__":
     if len(sys.argv) < 2:
         print("%s <video.mp4>" % sys.argv[0])
         exit(-1)
-    cap = cv2.VideoCapture(sys.argv[-1])
+    cap = cv2.VideoCapture(sys.argv[1])
     while cap.isOpened():
         ret, frame = cap.read()
 

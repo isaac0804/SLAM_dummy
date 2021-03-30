@@ -26,21 +26,26 @@ def denormalize(pt, k):
     return int(round(ret[0])), int(round(ret[1]))
 
 
+def poseRt(R, t):
+    ret = np.eye(4)
+    ret[:3, :3] = R
+    ret[:3, 3] = t
+    return ret
+
+
 def extractRt(F):
     # extract transformation matrix from given matrix
     W = np.mat([[0, -1, 0], [1, 0, 0], [0, 0, 1]], dtype=np.float64)
     U, d, Vt = np.linalg.svd(F)
-    assert np.linalg.det(U) > 0
+    if np.linalg.det(U) < 0:
+        U *= -1.0
     if np.linalg.det(Vt) < 0:
         Vt *= -1.0
     R = np.dot(np.dot(U, W), Vt)
     if np.sum(R.diagonal()) < 0:
         R = np.dot(np.dot(U, W.T), Vt)
     t = U[:, 2]
-    ret = np.eye(4)
-    ret[:3, :3] = R
-    ret[:3, 3] = t
-    return ret
+    return poseRt(R, t)
 
 
 def extract(image):
@@ -97,9 +102,9 @@ class Frame(object):
         self.k = k
         self.kinv = np.linalg.inv(self.k)
         self.h, self.w = image.shape[0:2]
-        self.pose = IRt
-        kps, self.des = extract(image)
-        self.kps = normalize(kps, self.kinv)
+        self.pose = np.eye(4)
+        self.kpus, self.des = extract(image)
+        self.kps = normalize(self.kpus, self.kinv)
         self.pts = [None]*len(self.kps)
         self.id = len(mapp.frames)
         mapp.frames.append(self)
