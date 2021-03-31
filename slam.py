@@ -116,7 +116,6 @@ def processing_frame(image):
     good_pts4d = (np.abs(pts4d[:, 3]) > 0.005) & (pts4d[:, 2] > 0) & unmatched_points
     print(f"Adding {sum(good_pts4d)} points")
 
-    print(len(good_pts4d), sum(good_pts4d))
     for i, p in enumerate(pts4d):
         if not good_pts4d[i]:
             continue
@@ -137,7 +136,8 @@ def processing_frame(image):
 
     cv2.imshow("frame", frame_resized)
     if frame.id > 4:
-        mapp.optimize()
+        err = mapp.optimize()
+        print(f"Optimize: {err} units of error")
     mapp.display()
 
 

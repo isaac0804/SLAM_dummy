@@ -5,13 +5,16 @@ from frame import poseRt
 from multiprocessing import Process, Queue
 import g2o
 
+LOCAL_WINDOW = 20
+
 class Point(object):
     def __init__(self, mapp, loc, color):
         self.pt = loc
         self.frames = []
         self.idxs = []
         self.color = np.copy(color)
-        self.id = len(mapp.points)
+        self.id = mapp.max_point
+        mapp.max_point += 1
         mapp.points.append(self)
 
     def add_observation(self, frame, idx):
@@ -19,11 +22,17 @@ class Point(object):
         self.frames.append(frame)
         self.idxs.append(idx)
 
+    def delete(self):
+        for f in self.frames:
+            f.pts[f.pts.index(self)] = None
+        del self
+
 
 class Map(object):
     def __init__(self):
         self.points = []
         self.frames = []
+        self.max_point = 0
         self.state = None
         self.q = None
         self.create_viewer()
@@ -38,6 +47,8 @@ class Map(object):
         
         robust_kernel = g2o.RobustKernelHuber(np.sqrt(5.991))
 
+        local_frames = self.frames[-LOCAL_WINDOW:]
+
         # add frames to graph
         for f in self.frames:
             pose = f.pose
@@ -47,12 +58,14 @@ class Map(object):
             v_se3 = g2o.VertexCam()
             v_se3.set_id(f.id)
             v_se3.set_estimate(sbacam)
-            v_se3.set_fixed(f.id <= 1)
+            v_se3.set_fixed(f.id <= 1 or f not in local_frames)
             opt.add_vertex(v_se3)
         
         # add points to frames
         PT_ID_OFFSET = 0x10000
         for p in self.points:
+            if not any([f in local_frames for f in p.frames]):
+                continue
             pt = g2o.VertexSBAPointXYZ()
             pt.set_id(p.id + PT_ID_OFFSET)
             pt.set_estimate(p.pt[0:3])
@@ -70,9 +83,9 @@ class Map(object):
                 edge.set_robust_kernel(robust_kernel)
                 opt.add_edge(edge)
 
-        opt.set_verbose(True)
+        # opt.set_verbose(True)
         opt.initialize_optimization()
-        opt.optimize(50)
+        opt.optimize(10)
 
         # put frames back
         for f in self.frames:
@@ -81,9 +94,28 @@ class Map(object):
             t = est.translation()
             f.pose = poseRt(R, t)
 
+        # put points back
+        new_points = []
         for p in self.points:
-            est = opt.vertex(p.id + PT_ID_OFFSET).estimate()
+            vert = opt.vertex(p.id + PT_ID_OFFSET)
+            if vert is None:
+                new_points.append(p)
+                continue
+            est = vert.estimate()
+            old_point = len(p.frames) == 2 and p.frames[-1] not in local_frames
+            errs = []
+            for f in p.frames:
+                uv = f.kpus[f.pts.index(p)]
+                proj = np.dot(f.k, est)
+                proj = proj[0:2] / proj[2]
+                errs.append(np.linalg.norm(proj-uv))
+            if (old_point and np.mean(errs) > 30) or np.mean(errs) > 100:
+                p.delete()
+                continue
             p.pt = np.array(est)
+            new_points.append(p)
+        self.points = new_points
+        return opt.chi2()
 
     # *** viewer ***
 
@@ -103,7 +135,7 @@ class Map(object):
         gl.glEnable(gl.GL_DEPTH_TEST)
 
         self.scam = pangolin.OpenGlRenderState(
-            pangolin.ProjectionMatrix(w, h, 420, 420, w//2, h//2, 0.2, 1000),
+            pangolin.ProjectionMatrix(w, h, 420, 420, w//2, h//2, 0.2, 10000),
             # pangolin.ProjectionMatrix(w, h, 230, 230, w//2, h//2, 0.2, 5000),
             pangolin.ModelViewLookAt(0, -10, -8,
                                      0, 0, 0,

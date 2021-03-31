@@ -49,9 +49,9 @@ def extractRt(F):
 
 
 def extract(image):
-    orb = cv2.ORB_create(1200)
+    orb = cv2.ORB_create()
     # detection
-    corners = cv2.goodFeaturesToTrack(image=image, maxCorners=1200, qualityLevel=0.01, minDistance=5)
+    corners = cv2.goodFeaturesToTrack(image=image, maxCorners=3000, qualityLevel=0.01, minDistance=5)
     # extraction
     kps = [cv2.KeyPoint(x=corner[0][0], y=corner[0][1], _size=20) for corner in corners]
     kps, des = orb.compute(image=image, keypoints=kps)
@@ -86,8 +86,8 @@ def match_frames(f1, f2):
     idx1 = np.array(idx1)
     idx2 = np.array(idx2)
     model, inliers = ransac((ret[:, 0], ret[:, 1]),
-                            EssentialMatrixTransform,
-                            # FundamentalMatrixTransform,
+                            # EssentialMatrixTransform,
+                            FundamentalMatrixTransform,
                             min_samples=8,
                             residual_threshold=0.005,
                             max_trials=100)
