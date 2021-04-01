@@ -3,8 +3,12 @@ This is a dummy trying to do something related to SLAM (Simultaneous Localizatio
 
 ## Status
 Abandoned Project. I used so much time (more than 3 days) trying to have g2opy and pangolin library working on my Windows 10 and it is so 
-frustrating. I think I should focus on learning the other things and come back once I feel like it. (I still think SLAM 
-is cool though) 
+frustrating. I think I should focus on learning the other things and come back once I feel like it. (I still think SLAM is cool though) 
+
+1 April 2021
+I install a linux system in my external ssd and I got g2opy and pangolin running now. 
+
+
 ## Library 
 - cv2 for feature detection
 ## Demo Images
@@ -31,11 +35,17 @@ The green circles indicate the features in the current frame, while red circles 
 - [x]  Fundamental Matrix
 - [x]  Essential Matrix
 - [x]  Get Rotation and Translation information
+- [x]  g2opy Library
+- [x]  Pangolin Library
+- [x]  3d mapping
+- [x]  g2opy optimization  
 
 ## To Do
-- [ ]  g2opy Library
-- [ ]  Pangolin Library
-- [ ]  3d mapping
+- [ ] 
+- [ ] 
+- [ ] 
+- [ ] 
+- [ ] 
 
 ## My thoughts in my head right now
 ### Some concepts (possibly wrong)
