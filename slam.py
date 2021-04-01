@@ -14,12 +14,6 @@ import PIL.ImageOps
 # 1000 for driving_timelapse.mp4
 F = int(os.getenv("F", "230"))
 
-# By guessing, focal length, f
-# ? for driving.mp4
-# 230 for driving2.mp4
-# 1000 for driving_timelapse.mp4
-F = 230
-
 # Main classes
 mapp = Map()
 
@@ -108,13 +102,24 @@ def processing_frame(image):
             f2.pts[idx].add_observation(f1, idx1[i])
 
     # homogeneous 3D coords
-    pts4d = triangulate(f1.pose, f2.pose, f1.kps[idx1], f2.kps[idx2])
-    pts4d /= pts4d[:, 3:]
-    # length of pts4d is the same as the index of idx1 (because pts4d is just converted 3d coordinates)\
+    # pts4d = triangulate(f1.pose, f2.pose, f1.kps[idx1], f2.kps[idx2])
+    # pts4d /= pts4d[:, 3:]
+    # length of pts4d is the same as the index of idx1 (because pts4d is just converted 3d coordinates)
 
-    unmatched_points = np.array([f1.pts[i] is None for i in idx1])
-    good_pts4d = (np.abs(pts4d[:, 3]) > 0.005) & (pts4d[:, 2] > 0) & unmatched_points
-    print(f"Adding {sum(good_pts4d)} points")
+    good_pts4d = np.array(([f1.pts[i] is None for i in idx1]))
+
+    # reject points without enough parrallax
+    pts_tri_local = triangulate(Rt, np.eye(4), f1.kps[idx1], f2.kps[idx2])
+    good_pts4d &= np.abs(pts_tri_local[:, 3]) > 0.005
+
+    # reject the points behind the camera
+    pts_tri_local /= pts_tri_local[:, 3:]
+    good_pts4d &= pts_tri_local[:, 2] > 0
+
+    # project into the world
+    pts4d = np.dot(np.linalg.inv(f1.pose), pts_tri_local.T).T
+
+    print(f"Adding    {sum(good_pts4d)} points")
 
     for i, p in enumerate(pts4d):
         if not good_pts4d[i]:

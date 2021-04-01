@@ -1,3 +1,4 @@
+import os
 import cv2
 import numpy as np
 
@@ -45,15 +46,17 @@ def extractRt(F):
     if np.sum(R.diagonal()) < 0:
         R = np.dot(np.dot(U, W.T), Vt)
     t = U[:, 2]
+    if os.getenv("REVERSE") is not None:
+        t *= -1
     return poseRt(R, t)
 
 
 def extract(image):
     orb = cv2.ORB_create()
     # detection
-    corners = cv2.goodFeaturesToTrack(image=image, maxCorners=3000, qualityLevel=0.01, minDistance=5)
+    pts = cv2.goodFeaturesToTrack(image=image, maxCorners=3000, qualityLevel=0.01, minDistance=4)
     # extraction
-    kps = [cv2.KeyPoint(x=corner[0][0], y=corner[0][1], _size=20) for corner in corners]
+    kps = [cv2.KeyPoint(x=f[0][0], y=f[0][1], _size=20) for f in pts]
     kps, des = orb.compute(image=image, keypoints=kps)
     return np.array([(kp.pt[0], kp.pt[1]) for kp in kps]), des
 
@@ -89,9 +92,9 @@ def match_frames(f1, f2):
                             # EssentialMatrixTransform,
                             FundamentalMatrixTransform,
                             min_samples=8,
-                            residual_threshold=0.005,
+                            residual_threshold=0.001,
                             max_trials=100)
-    print("Matches: %d -> %d -> %d -> %d"% (len(f1.des), len(matches), len(inliers), sum(inliers)))
+    print("Matches:  %d -> %d -> %d -> %d"% (len(f1.des), len(matches), len(inliers), sum(inliers)))
     # print(model.params)
     Rt = extractRt(model.params)
     return idx1[inliers], idx2[inliers], Rt

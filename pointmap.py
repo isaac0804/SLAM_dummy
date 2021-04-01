@@ -4,6 +4,7 @@ import pangolin
 from frame import poseRt
 from multiprocessing import Process, Queue
 import g2o
+import time
 
 LOCAL_WINDOW = 20
 
@@ -47,7 +48,10 @@ class Map(object):
         
         robust_kernel = g2o.RobustKernelHuber(np.sqrt(5.991))
 
-        local_frames = self.frames[-LOCAL_WINDOW:]
+        if LOCAL_WINDOW is None:
+            local_frames = self.frames
+        else:
+            local_frames = self.frames[-LOCAL_WINDOW:]
 
         # add frames to graph
         for f in self.frames:
@@ -85,7 +89,7 @@ class Map(object):
 
         # opt.set_verbose(True)
         opt.initialize_optimization()
-        opt.optimize(10)
+        opt.optimize(80)
 
         # put frames back
         for f in self.frames:
@@ -109,9 +113,9 @@ class Map(object):
                 proj = np.dot(f.k, est)
                 proj = proj[0:2] / proj[2]
                 errs.append(np.linalg.norm(proj-uv))
-            if (old_point and np.mean(errs) > 30) or np.mean(errs) > 100:
-                p.delete()
-                continue
+            #if (old_point and np.mean(errs) > 30) or np.mean(errs) > 100:
+            #    p.delete()
+            #    continue
             p.pt = np.array(est)
             new_points.append(p)
         self.points = new_points
@@ -131,7 +135,7 @@ class Map(object):
             self.viewer_refresh(q)
 
     def viewer_init(self, w, h):
-        pangolin.CreateWindowAndBind('Main', w, h)
+        pangolin.CreateWindowAndBind('3D Map', w, h)
         gl.glEnable(gl.GL_DEPTH_TEST)
 
         self.scam = pangolin.OpenGlRenderState(
@@ -160,7 +164,7 @@ class Map(object):
         pangolin.DrawCameras(self.state[0])
 
         # draw keypoints
-        gl.glPointSize(5)
+        gl.glPointSize(2)
         gl.glColor3f(0.0, 1.0, 0.0)
         pangolin.DrawPoints(self.state[1], self.state[2])
 
